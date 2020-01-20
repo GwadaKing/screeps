@@ -1,12 +1,3 @@
-/*
- * Module code goes here. Use 'module.exports' to export things:
- * module.exports.thing = 'a thing';
- *
- * You can import it from another modules like this:
- * var mod = require('ExplorationMinistry');
- * mod.thing == 'a thing'; // true
- */
-
 module.exports = {
     /**
      * CALCULATE DISTANCE
@@ -21,17 +12,17 @@ module.exports = {
      * 
      * */
     findFreeCells: function(x1, y1) {
-        console.log("DEBUGGING TERRAIN ----------------------------------------------------> "+this.getCellContent(39,34));
-        let extensionCells = [ {x:x1-2, y:y1+2}, {x:x1-1, y:y1+2}, {x:x1, y:y1+2}, {x:x1+1, y:y1+2}, {x:x1+2, y:y1+2} ];
+        // This list controls the extensions location choice, relative to spawn location
+        let extensionCells = [ {x:x1-2, y:y1+2}, {x:x1-1, y:y1+2}, {x:x1, y:y1+2}, {x:x1+1, y:y1+2}, {x:x1+2, y:y1+2}, {x:x1-2, y:y1+4}, {x:x1-1, y:y1+4}, {x:x1, y:y1+4}, {x:x1+1, y:y1+4}, {x:x1+2, y:y1+4}, {x:x1-2, y:y1+6}, {x:x1-1, y:y1+6}, {x:x1, y:y1+6}, {x:x1+1, y:y1+6}, {x:x1+2, y:y1+6}];
         for (let i = 0, l = extensionCells.length; i < l; i++) {
             let cellType   = this.getCellType(extensionCells[i].x, extensionCells[i].y );
             let cellContent = this.getCellContent(extensionCells[i].x, extensionCells[i].y );
-            if (cellType == "plain" && cellContent == "terrain") {
+            if (cellContent == "terrain") {
                 let result = {x:extensionCells[i].x, y:extensionCells[i].y};
                 return result;
             }
-            else return false;
         }
+        return false;
     },
     
     /**

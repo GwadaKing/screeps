@@ -5,16 +5,28 @@ module.exports = {
     /**
      * MAKE CREEPS
      * Handle creeps generation
-     * TODO --> Implement role handling and role quotas between harvesters, carriers and fighters
-     * TODO --> These roles could be organised in harvester/repairer, carrier/explorer, fighter/defender
+     * 
      * */
-    makeCreeps: function(creepRole, creepParts) {
-        //console.log("ENTREE MAKECREEPS");
-        let creepName = Memory.creepNamesRegister.shift();
-        if (Game.spawns['Spawn1'].spawnCreep([WORK, CARRY, MOVE], creepName, { memory: { role:creepRole }}) == OK) {
-            Game.spawns['Spawn1'].spawnCreep([WORK, CARRY, MOVE], creepName, { memory: { role:creepRole }});// TODO -> A terme remplacer par l'argument creepRole
+    makeCreeps: function(creepRole, roomEnergy, minHarvesters, minSpawningEnergy, maxSpawningEnergy) {
+        console.log("ENTREE MAKECREEPS ["+creepRole+" "+roomEnergy+"]");
+        let creepName        = Memory.creepNamesRegister.shift();
+        if (creepRole == "harvester") {
+            // If things went wrong, repopulate first with harvesters lightly built
+            if (ExplorationMinistry.getHarvestersNb() < minHarvesters && roomEnergy <= minSpawningEnergy && Memory.nbCreeps < minHarvesters) {
+                Game.spawns['Spawn1'].spawnCreep([WORK, CARRY, CARRY, MOVE, MOVE], creepName, { memory: { role:creepRole }});
+            }
+            // If energy full, create nicest creeps
+            if (roomEnergy >= maxSpawningEnergy) {
+                Game.spawns['Spawn1'].spawnCreep([WORK, WORK, WORK, WORK, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE], creepName, { memory: { role:creepRole }});
+            }
+            else console.log("====================================> 3e CAS NON GERE DANS CREATION HARVESTER <===================================="); 
         }
-        else console.log("Creep creation problem, the error code is "+Game.spawns['Spawn1'].spawnCreep([WORK, CARRY, MOVE], creepName, { memory: { role:creepRole }}));
+        else if (creepRole == "upgrader") {
+            if (Memory.nbCreeps > minHarvesters && roomEnergy >= maxSpawningEnergy) {
+                Game.spawns['Spawn1'].spawnCreep([WORK, WORK, WORK, WORK, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE], creepName, { memory: { role:creepRole }});
+            }
+            else Game.spawns['Spawn1'].spawnCreep([WORK, WORK, WORK, WORK, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE], creepName, { memory: { role:creepRole }});
+        }
     },
     
     /**
@@ -44,5 +56,21 @@ module.exports = {
             }
             else console.log("Mining problem while coming back to spawn, the error code is "+myharvester.moveTo(Game.spawns["Spawn1"], {visualizePathStyle: {stroke: '#ffffe0'}}));
         }
+    },
+    
+    /**
+     * DEFINE CREEP ROLES
+     * @param Int minUpgraders
+     * @param Int minHarvesters
+     * return String creepRole
+     **/
+    defineCreepRoles: function(minUpgraders, minHarvesters) {
+        let creepRole = "";
+        Memory.nbCreeps%2 === 0 ? creepRole = "harvester" : creepRole = "upgrader";
+        // Ensuring a minimum of harvesters, they have priority on other roles
+        if (ExplorationMinistry.getHarvestersNb() < minHarvesters) {
+            creepRole = "harvester";
+        }
+        return creepRole;
     }
 };

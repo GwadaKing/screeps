@@ -1,11 +1,4 @@
-/*
- * Module code goes here. Use 'module.exports' to export things:
- * module.exports.thing = 'a thing';
- *
- * You can import it from another modules like this:
- * var mod = require('EquipmentMinistry');
- * mod.thing == 'a thing'; // true
- */
+
  var MiningMinistry      = require('MiningMinistry');
  var ExplorationMinistry = require('ExplorationMinistry');
 
@@ -16,7 +9,7 @@ module.exports = {
      * TODO ->
      * */
     goUpgradeController: function(creepName) {
-        //console.log("ENTREE GOUPGRADECONTROLLER");
+        //console.log("ENTREE GOUPGRADECONTROLLER "+creepName);
         let creep             = Game.creeps[creepName];
         let myRoom            = Game.rooms[Object.keys(Game.rooms)];
         let creepPosition     = { x:creep.pos.x, y:creep.pos.y };
@@ -59,36 +52,49 @@ module.exports = {
      * */
     buildExtension: function(creepName, buildingType) {
         console.log("ENTREE BUILD EXTENSION "+creepName);
+        let x1 = 41;
+        let y1 = 32;
+        if (!Memory.extensionCells.length) {
+            Memory.extensionCells = [ {x:x1-2, y:y1+2}, {x:x1-1, y:y1+2}, {x:x1, y:y1+2}, {x:x1+1, y:y1+2}, {x:x1+2, y:y1+2}, {x:x1-2, y:y1+4}, {x:x1-1, y:y1+4}, {x:x1, y:y1+4}, {x:x1+1, y:y1+4}, {x:x1+2, y:y1+4}, {x:x1-2, y:y1+6}, {x:x1-1, y:y1+6}, {x:x1, y:y1+6}, {x:x1+1, y:y1+6}, {x:x1+2, y:y1+6}];
+        }
         let creep                    = Game.creeps[creepName];
         let extTemp                  = Game.rooms[Object.keys(Game.rooms)].find(FIND_MY_STRUCTURES, {filter: {structureType: STRUCTURE_EXTENSION}});
         let mySpawnPosition          = { x:Game.spawns["Spawn1"].pos.x, y:(Game.spawns["Spawn1"].pos.y) };
         let constructionSitePosition = ExplorationMinistry.findFreeCells(mySpawnPosition.x, mySpawnPosition.y);
-        console.log("DEBUGGING CONSTRUCTION SITE =====================================================================> "+ExplorationMinistry.getCellType(constructionSitePosition.x, constructionSitePosition.y));
-        // First checking if the cell is occupied by a construction site or a structure
-        if (ExplorationMinistry.getCellContent == "") {
-            
+        if (constructionSitePosition) {
+            console.log("ENTREE BUILD EXTENSION 2"+creepName);
+            // First checking if the cell is occupied by a construction site or a structure
+            if (ExplorationMinistry.getCellContent(constructionSitePosition.x, constructionSitePosition.y) == "terrain") {
+                // Then creating the construction site
+                if (creep.room.createConstructionSite(constructionSitePosition.x, constructionSitePosition.y, STRUCTURE_EXTENSION ) == 0) {
+                    creep.room.createConstructionSite(constructionSitePosition.x, constructionSitePosition.y, STRUCTURE_EXTENSION);
+                }
+                else console.log("Equipment problem with constructionSite creation, the error is "+creep.room.createConstructionSite(constructionSitePosition.x, constructionSitePosition.y, STRUCTURE_EXTENSION));
+            }
         }
-        
-        // Then creating the construction site
-        if (creep.room.createConstructionSite(constructionSitePosition.x, constructionSitePosition.y, STRUCTURE_EXTENSION ) == 0) {
-            creep.room.createConstructionSite(constructionSitePosition.x, constructionSitePosition.y, STRUCTURE_EXTENSION);
-        }
-        else console.log("Equipment problem while creating construction site for extension, the error code is "+creep.room.createConstructionSite(constructionSitePosition.x, constructionSitePosition.y, STRUCTURE_EXTENSION ));
-        let target = creep.pos.findClosestByPath(FIND_CONSTRUCTION_SITES);
-        // then building phase
-        if (target !== null) {
-            if(target) {
-                if (creep.build(target) == OK) {
+        else if (!constructionSitePosition) {
+            console.log("ENTREE BUILD EXTENSION 3"+creepName);
+            let target = creep.pos.findClosestByPath(FIND_CONSTRUCTION_SITES);
+            let extLen = (Memory.extensionCells.length) -1;
+            if (ExplorationMinistry.getCellContent(Memory.extensionCells[extLen].x, Memory.extensionCells[extLen].y) == "constructionSite") {
+                console.log("ENTREE BUILD EXTENSION 4"+creepName);
+                // then building phase
+                if(target) {
+                    console.log("ENTREE BUILD EXTENSION 4"+creepName);
                     if(creep.build(target) == ERR_NOT_IN_RANGE) {
-                        creep.moveTo(target, {visualizePathStyle: {stroke: '#ff9900'}});
+                        console.log("ENTREE BUILD EXTENSION 5"+creepName);
+                        creep.moveTo(Memory.extensionCells[extLen].x, Memory.extensionCells[extLen].y, {visualizePathStyle: {stroke: '##7CFC00'}});
                     }
                     console.log("CONSTRUCTION IN PROGRESS : "+target.progress+"/"+target.progressTotal);
                 }
+                else {
+                    creep.memory.role     = "harvester";
+                    creep.memory.building = false;
+                }
             }
-        }
-        else {
-            creep.memory.role     = "harvester";
-            creep.memory.building = false;
+            else if (ExplorationMinistry.getCellContent(Memory.extensionCells[extLen].x, Memory.extensionCells[extLen].y) == "structure") {
+               Memory.extensionCells.pop();
+            }
         }
     },
 
@@ -122,8 +128,45 @@ module.exports = {
             creep.moveTo(extensionInfo.x, extensionInfo.y);
         }
         else {
-            creep.memory.role = "harvester";
+            if (creep.store.getUsedCapacity() >49) {
+                this.refillExtensions(creepName);
+            }
+            else {
+                creep.memory.role = "harvester";
             MiningMinistry.goHarvest(creepName);
+            }
         }
+    },
+    
+    /**
+     * BUILD STRUCTURE
+     * Create construction site, then build structure on it
+     * */
+    buildStructure: function(creepName, buildingType, x, y) {
+        console.log("ENTREE BUILD STRUCTURE "+creepName);
+        let creep                    = Game.creeps[creepName];
+        let mySpawnPosition          = { x:Game.spawns["Spawn1"].pos.x, y:(Game.spawns["Spawn1"].pos.y) };
+        // Then creating the construction site
+        if (creep.room.createConstructionSite(x, y, buildingType ) == 0) {
+            creep.room.createConstructionSite(x, y, buildingType);
+        }
+        else console.log("Equipment problem with constructionSite creation, the error is "+creep.room.createConstructionSite(x, y, buildingType));
+        let target = creep.pos.findClosestByPath(FIND_CONSTRUCTION_SITES);
+        if (ExplorationMinistry.getCellContent(x, y) == "constructionSite") {
+            // then building phase
+            if(target) {
+                if(creep.build(target) == ERR_NOT_IN_RANGE) {
+                    creep.moveTo(x, y, {visualizePathStyle: {stroke: '##7CFC00'}});
+                }
+                console.log("CONSTRUCTION IN PROGRESS : "+target.progress+"/"+target.progressTotal);
+            }
+            else {
+                creep.memory.role     = "harvester";
+                creep.memory.building = false;
+            }
+        }
+        else if (ExplorationMinistry.getCellContent(x, y) == "structure" && target.progress == target.progressTotal) {
+        }
+        
     }
 };
