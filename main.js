@@ -21,7 +21,7 @@ module.exports.loop = function () {
     const RCLPosition       = { x:Game.rooms[Object.keys(Game.rooms)].controller.pos.x, y:Game.rooms[Object.keys(Game.rooms)].controller.pos.y };
     const maxBuilders       = 3;
     const minUpgraders      = 4;
-    const minHarvesters     = 5;
+    const minHarvesters     = 4;
     const maxBodyParts      = 4;
     Memory.maxExtensions    = 15; 
     Memory.nbCreeps         = Object.keys(Game.creeps).length;
@@ -29,6 +29,8 @@ module.exports.loop = function () {
     Memory.maxCreeps        = 15;
     
     //////////////////////////////  CREEPS HANDLING  //////////////////////////////
+    
+    console.log("TOUR N°"+Game.time);
     
     // clear memory
     Object.values(Memory.creeps).forEach(((name) => { if (!Game.creeps[name]) { delete Game.creeps[name]; } }));
@@ -62,42 +64,16 @@ module.exports.loop = function () {
                     if (Memory.spawnEnergy.current == Memory.spawnEnergy.max && roomEnergy < maxRoomEnergy) {
                         creep.memory.role = "refiller";
                         creep.memory.refilling = true;
-                        EquipmentMinistry.refillExtensions(creepName);
+                        EquipmentMinistry.refillExtensions(creepName, roomEnergy, maxRoomEnergy);
                     }
                     else MiningMinistry.goHarvest(creepName);
-                }
-                // If maxCreeps reached, then make sure extensions are refilled and assign building and repairing tasks
-                else if (Memory.nbCreeps >= Memory.maxCreeps) {
-                    if (ExplorationMinistry.getExtensionsNb() < Memory.maxExtensions) {
-                        creep.memory.role = "builder";
-                        EquipmentMinistry.buildExtension(creepName);
-                    }
-                    else {
-                        if (roomEnergy == maxRoomEnergy) {
-                            creep.memory.role = "builder";
-                            creep.memory.refilling = false;
-                            creep.memory.building  = false;
-                            MiningMinistry.goHarvest(creepName);
-                        }
-                        else {
-                            creep.memory.role = "harvester";
-                            creep.memory.refilling = false;
-                            creep.memory.building  = false;
-                            MiningMinistry.goHarvest(creepName);
-                        }
-                    }
                 }
             }
             else MiningMinistry.goHarvest(creepName);
         }
         // BUILDERS (once they're out of energy, they get back to harvesters)
         else if (creep.memory.role == "builder") {
-            if (creep.store.getUsedCapacity() === 0) {
-                creep.memory.building = false;
-                creep.memory.role     = "harvester";
-                MiningMinistry.goHarvest(creepName, sourceNb);
-            }
-            else  EquipmentMinistry.buildStructure(creepName, STRUCTURE_TOWER, 26, 25);
+            EquipmentMinistry.buildStructure(creepName, STRUCTURE_TOWER, 26, 25); // TODO-> Créer une queue pour les structures à construire
         }
         // UPGRADERS
         else if (creep.memory.role == "upgrader") {
@@ -106,10 +82,10 @@ module.exports.loop = function () {
         //////////////////////////   TEMPORARY ROLES   ////////////////////////////
         // REFILLERS 
         else if (creep.memory.role == "refiller") {
-            if (creep.store.getFreeCapacity() == creep.store.getCapacity()) {
+            if (creep.store.getUsedCapacity() < 50) {
                 creep.memory.role = "harvester";
             }
-            else EquipmentMinistry.refillExtensions(creepName);
+            else EquipmentMinistry.refillExtensions(creepName, roomEnergy, maxRoomEnergy);
         }
     }
     
