@@ -23,6 +23,10 @@ module.exports.loop = function () {
     const minUpgraders      = 4;
     const minHarvesters     = 4;
     const maxBodyParts      = 4;
+    var nbHarvesters        = ExplorationMinistry.getCreepsCountInRole("harvester");
+    var nbUpgraders         = ExplorationMinistry.getCreepsCountInRole("upgrader");
+    var nbBuilders          = ExplorationMinistry.getCreepsCountInRole("builder");
+    var nbFighters          = ExplorationMinistry.getCreepsCountInRole("fighter");
     Memory.maxExtensions    = 15; 
     Memory.nbCreeps         = Object.keys(Game.creeps).length;
     Memory.spawnEnergy      = {"current":Game.spawns['Spawn1'].store[RESOURCE_ENERGY], "max":SPAWN_ENERGY_CAPACITY};
@@ -31,7 +35,7 @@ module.exports.loop = function () {
     //////////////////////////////  CREEPS HANDLING  //////////////////////////////
     
     console.log("TOUR N°"+Game.time);
-    
+    console.log("NB HARVESTERS NBUPGRADERS NBBUILDERS"+Game.time);
     // clear memory
     Object.values(Memory.creeps).forEach(((name) => { if (!Game.creeps[name]) { delete Game.creeps[name]; } }));
     
@@ -42,13 +46,14 @@ module.exports.loop = function () {
                                      "nabu", "nace", "nada", "nadam", "nadarsh", "nadeel", "nadel", "nadi", "nadil", "naditi", "naditya", "nadnan", "nadolfo", "nadrian", "nadriana", "nadriano", "nadrienne", "nagnes",
                                      "nagnieszka", "nahmad", "nahmed", "nahmet", "nahsan", "naida", "naidan", "naileen", "naimee", "naisha", "naj", "najay", "najit", "nakash", "nakhil"];
     }
-    // Role Distribution before generating new creep
+    // DISTRIBUTING ROLES AND CREATING CREEPS
     if (Memory.nbCreeps < Memory.maxCreeps) {
-        let creepRole = MiningMinistry.defineCreepRoles(minUpgraders, minHarvesters);
+        let creepRole = MiningMinistry.defineCreepRoles(minUpgraders, minHarvesters, nbHarvesters, nbUpgraders, nbBuilders, nbFighters);
         MiningMinistry.makeCreeps(creepRole, roomEnergy, minHarvesters, minSpawningEnergy, maxSpawningEnergy);
+        //MiningMinistry.makeCreeps("fighter", roomEnergy, minHarvesters, minSpawningEnergy, maxSpawningEnergy);
     }
     
-    // ITERATING OVER CREEPS
+    // CREEPS MAIN LOOP
     for (var i = 0; i < Memory.nbCreeps; i++) {
         let creepName = Object.keys(Game.creeps)[i];
         let creep     = Game.creeps[creepName];
@@ -78,6 +83,10 @@ module.exports.loop = function () {
         // UPGRADERS
         else if (creep.memory.role == "upgrader") {
             EquipmentMinistry.goUpgradeController(creepName);
+        }
+        // FIGHTERS
+        else if (creep.memory.role == "fighter") {
+            //EquipmentMinistry.goUpgradeController(creepName);
         }
         //////////////////////////   TEMPORARY ROLES   ////////////////////////////
         // REFILLERS 

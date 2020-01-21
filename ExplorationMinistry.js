@@ -48,48 +48,21 @@ module.exports = {
     },
     
     /**
-     * GET HARVESTERS NUMBER
+     * GET CREEPS COUNT IN A ROLE
      * */
-    getHarvestersNb: function () {
-        let nbHarvesters = 0;
+    getCreepsCountInRole: function (creepRole) {
+        let nbCreepsInRole = 0;
         for (let i = 0; i < Memory.nbCreeps; i++) {
             let creepName = Object.keys(Game.creeps)[i];
-            let creep     = Game.creeps[creepName];
-            if (creep.memory.role == "harvester") {
-                nbHarvesters++;
+            if (creepName !== undefined) {
+                console.log("CREEP NAME=======================================================>"+creepName);
+                let creep     = Game.creeps[creepName];
+                if (creep.memory.role == creepRole) {
+                    nbCreepsInRole++;
+                }
             }
         }
-        return nbHarvesters;
-    },
-    
-    /**
-     * GET UPGRADERS NUMBER
-     * */
-    getUpgradersNb: function () {
-        let nbUpgraders = 0;
-        for (let i = 0; i < Memory.nbCreeps; i++) {
-            let creepName = Object.keys(Game.creeps)[i];
-            let creep     = Game.creeps[creepName];
-            if (creep.memory.role == "upgrader") {
-                nbUpgraders++;
-            }
-        }
-        return nbUpgraders;
-    },
-    
-    /**
-     * GET BUILDERS NUMBER
-     * */
-    getBuildersNb: function () {
-        let nbBuilders = 0;
-        for (let i = 0; i < Memory.nbCreeps; i++) {
-            let creepName = Object.keys(Game.creeps)[i];
-            let creep     = Game.creeps[creepName];
-            if (creep.memory.role == "builder") {
-                nbBuilders++;
-            }
-        }
-        return nbBuilders;
+        return nbCreepsInRole;
     },
     
     /**

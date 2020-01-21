@@ -62,7 +62,6 @@ module.exports = {
         let mySpawnPosition          = { x:Game.spawns["Spawn1"].pos.x, y:(Game.spawns["Spawn1"].pos.y) };
         let constructionSitePosition = ExplorationMinistry.findFreeCells(mySpawnPosition.x, mySpawnPosition.y);
         if (constructionSitePosition) {
-            console.log("ENTREE BUILD EXTENSION 2"+creepName);
             // First checking if the cell is occupied by a construction site or a structure
             if (ExplorationMinistry.getCellContent(constructionSitePosition.x, constructionSitePosition.y) == "terrain") {
                 // Then creating the construction site
@@ -73,11 +72,9 @@ module.exports = {
             }
         }
         else if (!constructionSitePosition) {
-            console.log("ENTREE BUILD EXTENSION 3"+creepName);
             let target = creep.pos.findClosestByPath(FIND_CONSTRUCTION_SITES);
             let extLen = (Memory.extensionCells.length) -1;
             if (ExplorationMinistry.getCellContent(Memory.extensionCells[extLen].x, Memory.extensionCells[extLen].y) == "constructionSite") {
-                console.log("ENTREE BUILD EXTENSION 4"+creepName);
                 // then building phase
                 if(target) {
                     console.log("ENTREE BUILD EXTENSION 4"+creepName);
@@ -159,15 +156,23 @@ module.exports = {
                 // then building phase
         else if (target) {
             console.log("ENTREE BUILD STRUCTURE 2");
-            if(creep.build(target) == ERR_NOT_IN_RANGE) {
-                creep.moveTo(x, y, {visualizePathStyle: {stroke: '##7CFC00'}});
+            if (creep.memory.building && creep.store[RESOURCE_ENERGY] == 0) {
+                creep.memory.building = false;
+            }
+            if (!creep.memory.building && creep.store.getFreeCapacity() == 0) {
+                creep.memory.building = true;
+            }
+            
+            if (creep.memory.building) {
+                if(creep.build(target) == ERR_NOT_IN_RANGE) {
+                    creep.moveTo(x, y, {visualizePathStyle: {stroke: '##7CFC00'}});
+                }
                 console.log("CONSTRUCTION IN PROGRESS : "+target.progress+"/"+target.progressTotal);
             }
-            else if (creep.store.getUsedCapacity() === 0) {
-                console.log("ENTREE BUILD STRUCTURE 3");
+            else {
                 let sources = creep.room.find(FIND_SOURCES);
-                if (creep.harvest(sources[1]) == ERR_NOT_IN_RANGE) {
-                    creep.moveTo(sources[1], { visualizePathStyle: {stroke: '#ffffe0' }});
+                if (creep.harvest(sources[0]) == ERR_NOT_IN_RANGE) {
+                    creep.moveTo(sources[0], { visualizePathStyle: {stroke: '#ffffe0' }});
                 }
             }
         }

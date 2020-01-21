@@ -30,6 +30,11 @@ module.exports = {
                 Game.spawns['Spawn1'].spawnCreep([WORK, WORK, WORK, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, ATTACK], creepName, { memory: { role:creepRole }});
             }
         }
+        else if (creepRole == "fighter") {
+            if (Memory.nbCreeps > minHarvesters && roomEnergy >= maxSpawningEnergy) {
+                Game.spawns['Spawn1'].spawnCreep([MOVE, MOVE, MOVE, MOVE, MOVE, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK], creepName, { memory: { role:creepRole }});
+            }
+        }
     },
     
     /**
@@ -67,18 +72,20 @@ module.exports = {
      * @param Int minHarvesters
      * return String creepRole
      **/
-    defineCreepRoles: function(minUpgraders, minHarvesters) {
+    defineCreepRoles: function(minUpgraders, minHarvesters, nbHarvesters, nbUpgraders, nbBuilders, nbFighters) {
         console.log("ENTREE DEFINE CREEP ROLES "+minUpgraders+" "+minHarvesters);
         let creepRole = "";
         Memory.nbCreeps%2 === 0 ? creepRole = "upgrader" : creepRole = "harvester";
         // Ensuring a minimum of harvesters, they have priority on other roles
-        if (ExplorationMinistry.getHarvestersNb() < minHarvesters) {
-            creepRole = "harvester";
-        }
+        if (nbUpgraders < minUpgraders)   { creepRole = "upgrader" }
+        if (nbHarvesters < minHarvesters) { creepRole = "harvester" }
         // Once enough harvesters and upgraders, there must be at least 1 permanent builder
-        else if (ExplorationMinistry.getBuildersNb() === 0 && Memory.nbCreeps >= (minHarvesters + minUpgraders)) {
+        else if (nbBuilders === 0 && Memory.nbCreeps >= (minHarvesters + minUpgraders)) {
             creepRole = "builder";
         }
+        else if (Memory.nbCreeps%10 === 0) {
+            creepRole = "fighter";
+        } 
         // Else the general rule applies (1upgrader then 1 harvester)
         return creepRole;
     }
