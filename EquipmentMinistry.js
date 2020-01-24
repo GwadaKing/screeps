@@ -44,63 +44,12 @@ module.exports = {
             }
         }
     },
-    
-    /**
-     * BUILD EXTENSION
-     * Create construction site, then build extension on it
-     * TODO -> Rendre la fonction dynamique pour qu'elle serve à n'importe quelle construction
-     * */
-    buildExtension: function(creepName, buildingType) {
-        console.log("ENTREE BUILD EXTENSION "+creepName);
-        let x1 = 41;
-        let y1 = 32;
-        if (!Memory.extensionCells.length) {
-            Memory.extensionCells = [ {x:x1-2, y:y1+2}, {x:x1-1, y:y1+2}, {x:x1, y:y1+2}, {x:x1+1, y:y1+2}, {x:x1+2, y:y1+2}, {x:x1-2, y:y1+4}, {x:x1-1, y:y1+4}, {x:x1, y:y1+4}, {x:x1+1, y:y1+4}, {x:x1+2, y:y1+4}, {x:x1-2, y:y1+6}, {x:x1-1, y:y1+6}, {x:x1, y:y1+6}, {x:x1+1, y:y1+6}, {x:x1+2, y:y1+6}];
-        }
-        let creep                    = Game.creeps[creepName];
-        let extTemp                  = Game.rooms[Object.keys(Game.rooms)].find(FIND_MY_STRUCTURES, {filter: {structureType: STRUCTURE_EXTENSION}});
-        let mySpawnPosition          = { x:Game.spawns["Spawn1"].pos.x, y:(Game.spawns["Spawn1"].pos.y) };
-        let constructionSitePosition = ExplorationMinistry.findFreeCells(mySpawnPosition.x, mySpawnPosition.y);
-        if (constructionSitePosition) {
-            // First checking if the cell is occupied by a construction site or a structure
-            if (ExplorationMinistry.getCellContent(constructionSitePosition.x, constructionSitePosition.y) == "terrain") {
-                // Then creating the construction site
-                if (creep.room.createConstructionSite(constructionSitePosition.x, constructionSitePosition.y, STRUCTURE_EXTENSION ) == 0) {
-                    creep.room.createConstructionSite(constructionSitePosition.x, constructionSitePosition.y, STRUCTURE_EXTENSION);
-                }
-                else console.log("Equipment problem with constructionSite creation, the error is "+creep.room.createConstructionSite(constructionSitePosition.x, constructionSitePosition.y, STRUCTURE_EXTENSION));
-            }
-        }
-        else if (!constructionSitePosition) {
-            let target = creep.pos.findClosestByPath(FIND_CONSTRUCTION_SITES);
-            let extLen = (Memory.extensionCells.length) -1;
-            if (ExplorationMinistry.getCellContent(Memory.extensionCells[extLen].x, Memory.extensionCells[extLen].y) == "constructionSite") {
-                // then building phase
-                if(target) {
-                    console.log("ENTREE BUILD EXTENSION 4"+creepName);
-                    if(creep.build(target) == ERR_NOT_IN_RANGE) {
-                        console.log("ENTREE BUILD EXTENSION 5"+creepName);
-                        creep.moveTo(Memory.extensionCells[extLen].x, Memory.extensionCells[extLen].y, {visualizePathStyle: {stroke: '##7CFC00'}});
-                    }
-                    console.log("CONSTRUCTION IN PROGRESS : "+target.progress+"/"+target.progressTotal);
-                }
-                else {
-                    creep.memory.role     = "harvester";
-                    creep.memory.building = false;
-                }
-            }
-            else if (ExplorationMinistry.getCellContent(Memory.extensionCells[extLen].x, Memory.extensionCells[extLen].y) == "structure") {
-               Memory.extensionCells.pop();
-            }
-        }
-    },
-
 
     /**
      * REFILL EXTENSIONS
      **/
     refillExtensions: function(creepName, roomEnergy, maxRoomEnergy) {
-        console.log("ENTREE REFILL EXTENSIONS ->"+creepName);
+        //console.log("ENTREE REFILL EXTENSIONS ->"+creepName);
         let creep                    = Game.creeps[creepName];
         let creepPosition            = { x:creep.pos.x, y:creep.pos.y };
         let mySpawnPosition          = { x:Game.spawns["Spawn1"].pos.x, y:(Game.spawns["Spawn1"].pos.y) };
@@ -129,10 +78,29 @@ module.exports = {
             if (creep.store.getUsedCapacity() >= 50 && roomEnergy < maxRoomEnergy) {
                 this.refillExtensions(creepName);
             }
-            /*else {
-                creep.memory.role = "harvester";
-                MiningMinistry.goHarvest(creepName);
-            }*/
+        }
+    },
+    
+    /**
+     * REFILL TOWERS
+     **/
+    refillTowers: function(creepName, towerId) {
+        //console.log("ENTREE REFILL TOWERS ->"+creepName);
+        let creep                    = Game.creeps[creepName];
+        let tower                    = Game.getObjectById(towerId);
+        let towerEnergy              = tower.energy;
+        let towerMaxEnergy           = 1000;
+        let towerPosition            = { x:tower.pos.x, y:tower.pos.y };
+        let creepPosition            = { x:creep.pos.x, y:creep.pos.y };
+        let mySpawnPosition          = { x:Game.spawns["Spawn1"].pos.x, y:(Game.spawns["Spawn1"].pos.y) };
+        // Transferring energy to extension
+        if (creep.transfer(tower, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+            creep.moveTo(towerPosition.x, towerPosition.y);
+        }
+        else {
+            if (creep.store.getUsedCapacity() >= 50 && towerEnergy < maxTowerEnergy) {
+                this.refillTowers(creepName, towerId);
+            }
         }
     },
     
@@ -144,7 +112,6 @@ module.exports = {
         console.log("ENTREE BUILD STRUCTURE "+creepName+" "+buildingType+" "+x+" "+y);
         let creep           = Game.creeps[creepName];
         let target          = creep.pos.findClosestByPath(FIND_CONSTRUCTION_SITES);
-        let mySpawnPosition = { x:Game.spawns["Spawn1"].pos.x, y:(Game.spawns["Spawn1"].pos.y) };
         if (!target) {
             console.log("ENTREE BUILD STRUCTURE 1");
             // Then creating the construction site
@@ -170,8 +137,10 @@ module.exports = {
                 console.log("CONSTRUCTION IN PROGRESS : "+target.progress+"/"+target.progressTotal);
             }
             else {
+                console.log("ENTREE BUILD STRUCTURE 3");
                 let sources = creep.room.find(FIND_SOURCES);
                 if (creep.harvest(sources[0]) == ERR_NOT_IN_RANGE) {
+                    console.log("ENTREE BUILD STRUCTURE 4");
                     creep.moveTo(sources[0], { visualizePathStyle: {stroke: '#ffffe0' }});
                 }
             }

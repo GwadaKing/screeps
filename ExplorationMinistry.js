@@ -12,13 +12,25 @@ module.exports = {
      * 
      * */
     findFreeCells: function(x1, y1) {
+        console.log("ENREE FIND FREE CELLS ->"+x1+" "+y1);
+        /*Memory.extensionCells = [ {x:x1-2, y:y1+2}, {x:x1-1, y:y1+2}, {x:x1, y:y1+2}, {x:x1+1, y:y1+2}, {x:x1+2, y:y1+2},
+                                      {x:x1-2, y:y1+4}, {x:x1-1, y:y1+4}, {x:x1, y:y1+4}, {x:x1+1, y:y1+4}, {x:x1+2, y:y1+4},
+                                      {x:x1-2, y:y1+6}, {x:x1-1, y:y1+6}, {x:x1, y:y1+6}, {x:x1+1, y:y1+6}, {x:x1+2, y:y1+6},
+                                      {x:x1-2, y:y1+8}, {x:x1-1, y:y1+8}, {x:x1, y:y1+8}, {x:x1+1, y:y1+8}, {x:x1+2, y:y1+8},
+                                      {x:x1+3, y:y1+2}, {x:x1+3, y:y1+4}, {x:x1+3, y:y1+6}, {x:x1+3, y:y1+8}, {x:x1+4, y:y1+2},
+                                      {x:x1+4, y:y1+4}, {x:x1+4, y:y1+6}, {x:x1+4, y:y1+8}, {x:x1+5, y:y1+2}, {x:x1+5, y:y1+4} ];*/
         // This list controls the extensions location choice, relative to spawn location
-        let extensionCells = [ {x:x1-2, y:y1+2}, {x:x1-1, y:y1+2}, {x:x1, y:y1+2}, {x:x1+1, y:y1+2}, {x:x1+2, y:y1+2}, {x:x1-2, y:y1+4}, {x:x1-1, y:y1+4}, {x:x1, y:y1+4}, {x:x1+1, y:y1+4}, {x:x1+2, y:y1+4}, {x:x1-2, y:y1+6}, {x:x1-1, y:y1+6}, {x:x1, y:y1+6}, {x:x1+1, y:y1+6}, {x:x1+2, y:y1+6}];
+        let extensionCells = [{x:x1-2, y:y1+2}, {x:x1-1, y:y1+2}, {x:x1, y:y1+2}, {x:x1+1, y:y1+2}, {x:x1+2, y:y1+2},
+                              {x:x1-2, y:y1+4}, {x:x1-1, y:y1+4}, {x:x1, y:y1+4}, {x:x1+1, y:y1+4}, {x:x1+2, y:y1+4},
+                              {x:x1-2, y:y1+6}, {x:x1-1, y:y1+6}, {x:x1, y:y1+6}, {x:x1+1, y:y1+6}, {x:x1+2, y:y1+6},
+                              {x:x1-2, y:y1+8}, {x:x1-1, y:y1+8}, {x:x1, y:y1+8}, {x:x1+1, y:y1+8}, {x:x1+2, y:y1+8},
+                              {x:x1+3, y:y1+2}, {x:x1+3, y:y1+4}, {x:x1+3, y:y1+6}, {x:x1+3, y:y1+8}, {x:x1+4, y:y1+2},
+                              {x:x1+4, y:y1+4}, {x:x1+4, y:y1+6}, {x:x1+4, y:y1+8}, {x:x1+5, y:y1+2}, {x:x1+5, y:y1+4} ];
         for (let i = 0, l = extensionCells.length; i < l; i++) {
             let cellType   = this.getCellType(extensionCells[i].x, extensionCells[i].y );
             let cellContent = this.getCellContent(extensionCells[i].x, extensionCells[i].y );
-            if (cellContent == "terrain") {
-                let result = {x:extensionCells[i].x, y:extensionCells[i].y};
+            if (cellContent == "constructionSite") {
+                let result = { x:extensionCells[i].x, y:extensionCells[i].y };
                 return result;
             }
         }
@@ -55,7 +67,6 @@ module.exports = {
         for (let i = 0; i < Memory.nbCreeps; i++) {
             let creepName = Object.keys(Game.creeps)[i];
             if (creepName !== undefined) {
-                console.log("CREEP NAME=======================================================>"+creepName);
                 let creep     = Game.creeps[creepName];
                 if (creep.memory.role == creepRole) {
                     nbCreepsInRole++;
