@@ -11,7 +11,7 @@ module.exports = {
     goUpgradeController: function(creepName) {
         //console.log("ENTREE GOUPGRADECONTROLLER "+creepName);
         let creep             = Game.creeps[creepName];
-        let myRoom            = Game.rooms[Object.keys(Game.rooms)];
+        let myRoom            = Game.rooms["E7S16"];
         let creepPosition     = { x:creep.pos.x, y:creep.pos.y };
         let sources           = creep.room.find(FIND_SOURCES);
         let source1Position   = { x:sources[0].pos.x, y:sources[0].pos.y };
@@ -54,7 +54,7 @@ module.exports = {
         let creepPosition            = { x:creep.pos.x, y:creep.pos.y };
         let mySpawnPosition          = { x:Game.spawns["Spawn1"].pos.x, y:(Game.spawns["Spawn1"].pos.y) };
         let distCreep2Spawn          = ExplorationMinistry.calculateDistance(mySpawnPosition.x, creepPosition.x, mySpawnPosition.y, creepPosition.y);
-        let extTemp                  = Game.rooms[Object.keys(Game.rooms)].find(FIND_MY_STRUCTURES, {filter: {structureType: STRUCTURE_EXTENSION}});
+        let extTemp                  = Game.rooms["E7S16"].find(FIND_MY_STRUCTURES, {filter: {structureType: STRUCTURE_EXTENSION}});
         let extensionInfo            = {};
         var myExtension              = "";
         let extensions               = [];
@@ -94,12 +94,9 @@ module.exports = {
         let creepPosition            = { x:creep.pos.x, y:creep.pos.y };
         let mySpawnPosition          = { x:Game.spawns["Spawn1"].pos.x, y:(Game.spawns["Spawn1"].pos.y) };
         // Transferring energy to extension
-        if (creep.transfer(tower, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-            creep.moveTo(towerPosition.x, towerPosition.y);
-        }
-        else {
-            if (creep.store.getUsedCapacity() >= 50 && towerEnergy < maxTowerEnergy) {
-                this.refillTowers(creepName, towerId);
+        if (creep.store.getUsedCapacity() > 0) {
+            if (creep.transfer(tower, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                creep.moveTo(towerPosition.x, towerPosition.y);
             }
         }
     },
@@ -113,16 +110,14 @@ module.exports = {
         let creep           = Game.creeps[creepName];
         let target          = creep.pos.findClosestByPath(FIND_CONSTRUCTION_SITES);
         if (!target) {
-            console.log("ENTREE BUILD STRUCTURE 1");
             // Then creating the construction site
             if (creep.room.createConstructionSite(x, y, buildingType ) === 0) {
                 creep.room.createConstructionSite(x, y, buildingType);
             }
             else console.log("Equipment problem with constructionSite creation, the error is "+creep.room.createConstructionSite(x, y, buildingType));
         }
-                // then building phase
+        // then building phase
         else if (target) {
-            console.log("ENTREE BUILD STRUCTURE 2");
             if (creep.memory.building && creep.store[RESOURCE_ENERGY] == 0) {
                 creep.memory.building = false;
             }
@@ -135,14 +130,25 @@ module.exports = {
                     creep.moveTo(x, y, {visualizePathStyle: {stroke: '##7CFC00'}});
                 }
                 console.log("CONSTRUCTION IN PROGRESS : "+target.progress+"/"+target.progressTotal);
+                console.log("DEBUGGING---->"+creep.build(target));
             }
             else {
-                console.log("ENTREE BUILD STRUCTURE 3");
                 let sources = creep.room.find(FIND_SOURCES);
                 if (creep.harvest(sources[0]) == ERR_NOT_IN_RANGE) {
-                    console.log("ENTREE BUILD STRUCTURE 4");
                     creep.moveTo(sources[0], { visualizePathStyle: {stroke: '#ffffe0' }});
                 }
+            }
+        }
+    },
+    
+    /**
+     * REPAIR ROADS
+     **/
+    repairRoads: function(towers) {
+        for (let i = 0, l = towers.length; i < l; i++) {
+            let damagedStructure = towers[i].pos.findClosestByRange(FIND_STRUCTURES, { filter: (structure) => (structure.structureType != STRUCTURE_WALL && structure.structureType != STRUCTURE_RAMPART) && structure.hits < structure.hitsMax  });
+            if (damagedStructure) {
+                towers[i].repair(damagedStructure);
             }
         }
     }

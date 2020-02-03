@@ -12,7 +12,7 @@ module.exports = {
      * 
      * */
     findFreeCells: function(x1, y1) {
-        console.log("ENREE FIND FREE CELLS ->"+x1+" "+y1);
+        //console.log("ENREE FIND FREE CELLS ->"+x1+" "+y1);
         /*Memory.extensionCells = [ {x:x1-2, y:y1+2}, {x:x1-1, y:y1+2}, {x:x1, y:y1+2}, {x:x1+1, y:y1+2}, {x:x1+2, y:y1+2},
                                       {x:x1-2, y:y1+4}, {x:x1-1, y:y1+4}, {x:x1, y:y1+4}, {x:x1+1, y:y1+4}, {x:x1+2, y:y1+4},
                                       {x:x1-2, y:y1+6}, {x:x1-1, y:y1+6}, {x:x1, y:y1+6}, {x:x1+1, y:y1+6}, {x:x1+2, y:y1+6},
@@ -42,7 +42,7 @@ module.exports = {
      * returns structure, creep or terrain
      * */
     getCellContent: function(x, y) {
-        return Game.rooms[Object.keys(Game.rooms)].lookAt(x, y)[0].type;
+        return Game.rooms["E7S16"].lookAt(x, y)[0].type;
     },
     
     /**
@@ -50,7 +50,7 @@ module.exports = {
      * returns wall, swamp or plain
      * */
     getCellType: function(x, y) {
-        const terrain = new Room.Terrain(Object.keys(Game.rooms));
+        const terrain = new Room.Terrain("E7S16");
         let cellType = terrain.get(x, y);
         switch (cellType) {
             case 1: return "wall"; break;
@@ -80,6 +80,6 @@ module.exports = {
      * GET EXTENSIONS NUMBER
      **/
     getExtensionsNb: function() {
-        return Game.rooms[Object.keys(Game.rooms)].find(FIND_MY_STRUCTURES, {filter: {structureType: STRUCTURE_EXTENSION}}).length;
+        return Game.rooms["E7S16"].find(FIND_MY_STRUCTURES, {filter: {structureType: STRUCTURE_EXTENSION}}).length;
     }
 };
