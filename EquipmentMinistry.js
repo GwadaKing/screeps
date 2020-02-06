@@ -8,21 +8,10 @@ module.exports = {
      * Handles controller room upgrading
      * TODO ->
      * */
-    goUpgradeController: function(creepName) {
+    goUpgradeController: function(creepName, mainRoomName) {
         //console.log("ENTREE GOUPGRADECONTROLLER "+creepName);
         let creep             = Game.creeps[creepName];
-        let myRoom            = Game.rooms["E7S16"];
-        let creepPosition     = { x:creep.pos.x, y:creep.pos.y };
         let sources           = creep.room.find(FIND_SOURCES);
-        let source1Position   = { x:sources[0].pos.x, y:sources[0].pos.y };
-        let source2Position   = { x:sources[1].pos.x, y:sources[1].pos.y };
-        let RCLPosition       = { x:myRoom.controller.pos.x, y:myRoom.controller.pos.y };
-        let distCreep2RCL     = ExplorationMinistry.calculateDistance(RCLPosition.x, creepPosition.x, RCLPosition.y, creepPosition.y);
-        let distRCL2Source    = { s1:ExplorationMinistry.calculateDistance(RCLPosition.x, source1Position.x, RCLPosition.y, source1Position.y), 
-                                  s2:ExplorationMinistry.calculateDistance(RCLPosition.x, source2Position.x, RCLPosition.y, source2Position.y) };
-        let closestSource2RCL = 0;
-        // Defining closest energy source from controller  
-        distRCL2Source.s1 >= distRCL2Source.s2 ? closestSource2RCL = 1 : closestSource2RCL = 0; 
         if (creep.room.controller) {
             if (creep.memory.upgrading && creep.store[RESOURCE_ENERGY] == 0) {
                 creep.memory.upgrading = false;
@@ -38,8 +27,15 @@ module.exports = {
                 }
             }
             else {
-                if(creep.harvest(sources[closestSource2RCL]) == ERR_NOT_IN_RANGE) {
-                    creep.moveTo(sources[closestSource2RCL], {visualizePathStyle: {stroke: '#ff0000'}});
+                if (creep.room.name == mainRoomName) {
+                    if(creep.harvest(sources[1]) == ERR_NOT_IN_RANGE) {
+                        creep.moveTo(sources[1], {visualizePathStyle: {stroke: '#ff0000'}});
+                    }
+                }
+                else {
+                    if(creep.harvest(sources[0]) == ERR_NOT_IN_RANGE) {
+                        creep.moveTo(sources[0], {visualizePathStyle: {stroke: '#ff0000'}});
+                    }
                 }
             }
         }
@@ -48,13 +44,11 @@ module.exports = {
     /**
      * REFILL EXTENSIONS
      **/
-    refillExtensions: function(creepName, roomEnergy, maxRoomEnergy) {
-        //console.log("ENTREE REFILL EXTENSIONS ->"+creepName);
+    refillExtensions: function(creepName, creepRoom, roomEnergy, maxRoomEnergy) {
+        console.log("ENTREE REFILL EXTENSIONS ->"+creepName+" "+creepRoom);
         let creep                    = Game.creeps[creepName];
         let creepPosition            = { x:creep.pos.x, y:creep.pos.y };
-        let mySpawnPosition          = { x:Game.spawns["Spawn1"].pos.x, y:(Game.spawns["Spawn1"].pos.y) };
-        let distCreep2Spawn          = ExplorationMinistry.calculateDistance(mySpawnPosition.x, creepPosition.x, mySpawnPosition.y, creepPosition.y);
-        let extTemp                  = Game.rooms["E7S16"].find(FIND_MY_STRUCTURES, {filter: {structureType: STRUCTURE_EXTENSION}});
+        let extTemp                  = creep.room.find(FIND_MY_STRUCTURES, {filter: {structureType: STRUCTURE_EXTENSION}});
         let extensionInfo            = {};
         var myExtension              = "";
         let extensions               = [];
@@ -72,11 +66,11 @@ module.exports = {
       
         // Transferring energy to extension
         if (creep.transfer(myExtension, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-            creep.moveTo(extensionInfo.x, extensionInfo.y);
+            creep.moveTo(myExtension);
         }
         else {
             if (creep.store.getUsedCapacity() >= 50 && roomEnergy < maxRoomEnergy) {
-                this.refillExtensions(creepName);
+                this.refillExtensions(creepName, creepRoom);
             }
         }
     },
@@ -90,13 +84,10 @@ module.exports = {
         let tower                    = Game.getObjectById(towerId);
         let towerEnergy              = tower.energy;
         let towerMaxEnergy           = 1000;
-        let towerPosition            = { x:tower.pos.x, y:tower.pos.y };
-        let creepPosition            = { x:creep.pos.x, y:creep.pos.y };
-        let mySpawnPosition          = { x:Game.spawns["Spawn1"].pos.x, y:(Game.spawns["Spawn1"].pos.y) };
         // Transferring energy to extension
         if (creep.store.getUsedCapacity() > 0) {
             if (creep.transfer(tower, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                creep.moveTo(towerPosition.x, towerPosition.y);
+                creep.moveTo(tower);
             }
         }
     },
@@ -105,19 +96,11 @@ module.exports = {
      * BUILD STRUCTURE
      * Create construction site, then build structure on it
      * */
-    buildStructure: function(creepName, buildingType, x, y) {
-        console.log("ENTREE BUILD STRUCTURE "+creepName+" "+buildingType+" "+x+" "+y);
+    buildStructure: function(creepName) {
+        console.log("ENTREE BUILD STRUCTURE "+creepName);
         let creep           = Game.creeps[creepName];
         let target          = creep.pos.findClosestByPath(FIND_CONSTRUCTION_SITES);
-        if (!target) {
-            // Then creating the construction site
-            if (creep.room.createConstructionSite(x, y, buildingType ) === 0) {
-                creep.room.createConstructionSite(x, y, buildingType);
-            }
-            else console.log("Equipment problem with constructionSite creation, the error is "+creep.room.createConstructionSite(x, y, buildingType));
-        }
-        // then building phase
-        else if (target) {
+        if (target) {
             if (creep.memory.building && creep.store[RESOURCE_ENERGY] == 0) {
                 creep.memory.building = false;
             }
@@ -127,7 +110,7 @@ module.exports = {
             
             if (creep.memory.building) {
                 if(creep.build(target) == ERR_NOT_IN_RANGE) {
-                    creep.moveTo(x, y, {visualizePathStyle: {stroke: '##7CFC00'}});
+                    creep.moveTo(target, {visualizePathStyle: {stroke: '##7CFC00'}});
                 }
                 console.log("CONSTRUCTION IN PROGRESS : "+target.progress+"/"+target.progressTotal);
                 console.log("DEBUGGING---->"+creep.build(target));

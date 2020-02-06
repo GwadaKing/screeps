@@ -4,29 +4,42 @@ const ExplorationMinistry   = require('ExplorationMinistry');
 const DefenceMinistry       = require('DefenceMinistry');
 module.exports.loop = function () {
     // MY CONSTANTS
-    const myRoomName        = "E7S16"; //Object.keys(Game.rooms); 
-    const myRoom            = Game.rooms[myRoomName];
-    const roomEnergy        = Game.rooms[myRoomName].energyAvailable;
-    const maxRoomEnergy     = Game.rooms[myRoomName].energyCapacityAvailable;
+    const mainRoomName      = "E7S16"; 
+    const upRoomName        = "E7S15";
+    const leftRoomName      = "E6S16";
+    const myRoom            = Game.rooms[mainRoomName];
+    const mainRoomEnergy    = Game.rooms[mainRoomName].energyAvailable;
+    const upRoomEnergy      = Game.rooms[upRoomName].energyAvailable;
+    const maxRoomEnergy     = Game.rooms[mainRoomName].energyCapacityAvailable;
+    const maxRoomEnergy2    = Game.rooms[upRoomName].energyCapacityAvailable; 
     const extensionCapacity = 50;
     const maxExtensions     = 30;
-    const nbExtensions      = ExplorationMinistry.getExtensionsNb();
+    const nbExtensions      = ExplorationMinistry.getExtensionsNb(mainRoomName);
     const minSpawningEnergy = 300;
     const maxSpawningEnergy = (nbExtensions * extensionCapacity) + minSpawningEnergy;
     const mainSpawnPosition = { x:Game.spawns["Spawn1"].pos.x, y:(Game.spawns["Spawn1"].pos.y) };
     const RCLPosition       = { x:Game.rooms["E7S16"].controller.pos.x, y:Game.rooms["E7S16"].controller.pos.y };
-    const RCLLevel          = Game.rooms[myRoomName].controller.level;
+    const RCLLevel          = Game.rooms[mainRoomName].controller.level;
     const minUpgraders      = 2;
     const minBuilders       = 1;
     const maxUpgraders      = 10;
     const minHarvesters     = 3;
     const mediumThresold    = 13;
     const maxBodyParts      = 4;
-    var nbUpgraders         = ExplorationMinistry.getCreepsCountInRole("upgrader");
-    var nbBuilders          = ExplorationMinistry.getCreepsCountInRole("builder");
-    var nbFighters          = ExplorationMinistry.getCreepsCountInRole("fighter");
-    var nbRefillers         = ExplorationMinistry.getCreepsCountInRole("refiller");
-    var nbHarvesters        = ExplorationMinistry.getCreepsCountInRole("harvester") + nbRefillers;
+    let roomName            = Object.keys(Game.rooms)[0]; 
+    var nbCreeps            = ExplorationMinistry.getCreepsCountInRole(mainRoomName, upRoomName);
+    var nbUpgraders         = nbCreeps.Spawn1.upgrader;
+    var nbBuilders          = nbCreeps.Spawn1.builder;
+    var nbFighters          = nbCreeps.Spawn1.fighter;
+    var nbRefillers         = nbCreeps.Spawn1.refiller;
+    var nbHarvesters        = nbCreeps.Spawn1.harvester + nbRefillers;
+    var nbUpgraders2        = nbCreeps.Spawn2.upgrader;
+    var nbBuilders2         = nbCreeps.Spawn2.builder;
+    var nbFighters2         = nbCreeps.Spawn2.fighter;
+    var nbRefillers2        = nbCreeps.Spawn2.refiller;
+    var nbHarvesters2       = nbCreeps.Spawn2.harvester + nbRefillers2;
+    var nbCreepsInRoom1     = nbUpgraders  + nbHarvesters  + nbBuilders  + nbFighters;
+    var nbCreepsInRoom2     = nbUpgraders2 + nbHarvesters2 + nbBuilders2 + nbFighters2;
     var towers              = myRoom.find(FIND_MY_STRUCTURES, {filter: {structureType: STRUCTURE_TOWER}});
     Memory.maxExtensions    = maxExtensions; 
     Memory.nbCreeps         = Object.keys(Game.creeps).length;
@@ -34,10 +47,17 @@ module.exports.loop = function () {
     Memory.maxCreeps        = 20;
     
     /////////////////////////////    DEBUGGING SPACE    ///////////////////////////////
-    /*if (Game.time % 10 == 0) { */console.log("GAME TIME-->"+Game.time+"|NB HARVESTERS "+nbHarvesters+" |NBUPGRADERS "+nbUpgraders+" |NBBUILDERS "+nbBuilders+" |NBFIGHTERS "+nbFighters+" |TOTALCREEPS "+Memory.nbCreeps);
+    console.log("GAME TIME-->"+Game.time+" |TOTALCREEPS "+Memory.nbCreeps+"\nMAIN ROOM ==> NB HARVESTERS "+nbHarvesters+" + NBUPGRADERS "+nbUpgraders+" + NBBUILDERS "+nbBuilders+" + NBFIGHTERS "+nbFighters+" = "+nbCreepsInRoom1+
+                                         "\nUP   ROOM ==> NB HARVESTERS "+nbHarvesters2+" + NBUPGRADERS "+nbUpgraders2+" + NBBUILDERS "+nbBuilders2+" + NBFIGHTERS "+nbFighters2+" = "+nbCreepsInRoom2);
     //let creep = Game.creeps["nabhay"];
     //creep.suicide();
     //console.log("DEBUGGING SPACE =====================================================================================>"+);
+    
+    
+
+    
+
+
     
     ////////////////////////////     CREEPS HANDLING    //////////////////////////////
     
@@ -51,50 +71,87 @@ module.exports.loop = function () {
                                      "nagnieszka", "nahmad", "nahmed", "nahmet", "nahsan", "naida", "naidan", "naileen", "naimee", "naisha", "naj", "najay", "najit", "nakash", "nakhil"];
     }
     // DISTRIBUTING ROLES AND CREATING CREEPS
-    if (Memory.nbCreeps <= Memory.maxCreeps && roomEnergy >= minSpawningEnergy) {
-        let colonyState = "";
-        let creepRole   = MiningMinistry.defineCreepRoles(minUpgraders, minHarvesters, nbHarvesters, nbUpgraders, nbBuilders, minBuilders, nbFighters, nbRefillers);
-        if      (Memory.nbCreeps <= 5)                       { colonyState = "low"    }
-        else if (Memory.nbCreeps >5 && Memory.nbCreeps < 13) { colonyState = "medium" }
-        else if (Memory.nbCreeps >=13)                       { colonyState = "high"   }
-        MiningMinistry.makeCreeps(creepRole, roomEnergy, minHarvesters, maxSpawningEnergy, colonyState);
+    if (Game.rooms[mainRoomName]) {
+        if (nbCreepsInRoom1 <= Memory.maxCreeps && mainRoomEnergy >= minSpawningEnergy) {
+            let colonyState = "";
+            let spawnName   = "Spawn1";
+            let creepRoom   = mainRoomName;
+            let creepRole   = MiningMinistry.defineCreepRoles(creepRoom, mainRoomName, nbCreepsInRoom1, nbCreepsInRoom2);
+            if      (nbCreepsInRoom1 <= 5)                       { colonyState = "low"    }
+            else if (nbCreepsInRoom1 >5 && nbCreepsInRoom1 < 13) { colonyState = "medium" }
+            else if (nbCreepsInRoom1 >=13)                       { colonyState = "high"   }
+            MiningMinistry.makeCreeps(creepRole, mainRoomEnergy, minHarvesters, maxSpawningEnergy, spawnName, colonyState);
+        }
+    }
+    if (Game.rooms[upRoomName]) {
+        if (nbCreepsInRoom2 <= Memory.maxCreeps && upRoomEnergy >= minSpawningEnergy) {
+            let colonyState = "";
+            let spawnName   = "Spawn2";
+            let creepRoom   = upRoomName;
+            let creepRole   = MiningMinistry.defineCreepRoles(creepRoom, mainRoomName, nbCreepsInRoom1, nbCreepsInRoom2);
+            if      (nbCreepsInRoom2 <= 5)                       { colonyState = "low"    }
+            else if (nbCreepsInRoom2 >5 && nbCreepsInRoom2 < 13) { colonyState = "medium" }
+            else if (nbCreepsInRoom2 >=13)                       { colonyState = "high"   }
+            MiningMinistry.makeCreeps(creepRole, upRoomEnergy, minHarvesters, maxSpawningEnergy, spawnName, "low");
+        }
     }
     
     // CREEPS MAIN LOOP
     for (var i = 0; i < Memory.nbCreeps; i++) {
         let creepName = Object.keys(Game.creeps)[i];
+        let spawnName = "";
         let creep     = Game.creeps[creepName];
         ////////////////////////////    MAIN ROLES   /////////////////////////////
         
         // HARVESTERS (might become refillers)
         if (creep.memory.role == "harvester") {
             let sources = creep.room.find(FIND_SOURCES);
+            if (creep.room.name == mainRoomName) { spawnName = "Spawn1" } else spawnName = "Spawn2";
             // Creep may become refiller if needed and if he has enough energy
             if (creep.store.getFreeCapacity() === 0) {
                 // If spawn full of energy non used and at least one extension is empty, then make sure to refill it
-                if (Memory.spawnEnergy.current == Memory.spawnEnergy.max && roomEnergy < maxRoomEnergy) {
+                if (Memory.spawnEnergy.current == Memory.spawnEnergy.max && mainRoomEnergy < maxRoomEnergy) {
                     creep.memory.role = "refiller";
                     creep.memory.refilling = true;
-                    EquipmentMinistry.refillExtensions(creepName, roomEnergy, maxRoomEnergy);
+                    EquipmentMinistry.refillExtensions(creepName, mainRoomEnergy, maxRoomEnergy);
                 }
-                else MiningMinistry.goHarvest(creepName);
+                else MiningMinistry.goHarvest(creepName, spawnName);
             }
-            else MiningMinistry.goHarvest(creepName);
+            else MiningMinistry.goHarvest(creepName, spawnName);
         }
             
         // BUILDERS
         else if (creep.memory.role == "builder") {
-            let targetRoomName = Game.map.describeExits("E7S16")[1];
-            
-            //creep.memory.role = "upgrader";
-            MiningMinistry.harvestNextRoom(creepName, targetRoomName, myRoomName);
-            //EquipmentMinistry.buildStructure(creepName, STRUCTURE_ROAD, 8, 26);
+            let droppedEnergy = creep.room.find(FIND_DROPPED_RESOURCES, { filter: function(resource) { return resource.resourceType === RESOURCE_ENERGY	}});
+            let bigStorage    = Game.getObjectById("5e2f6788f0d1bf9d60711eb9");
+            if (creep.room.name == mainRoomName) {
+                if (droppedEnergy) {
+                    if (creep.harvest(droppedEnergy) == ERR_NOT_IN_RANGE) {
+                        creep.moveTo(droppedEnergy);
+                    }
+                }
+                else EquipmentMinistry.buildStructure(creepName);
+            }
+            else if (creep.room.name == upRoomName) {
+                if (droppedEnergy) {
+                    if (creep.store.getFreeCapacity() > 0) {
+                        if (creep.harvest(droppedEnergy) == ERR_NOT_IN_RANGE) {
+                            creep.moveTo(droppedEnergy);
+                        }
+                    }
+                    else {
+                        if (creep.transfer(bigStorage) == ERR_NOT_IN_RANGE) {
+                            creep.moveTo(bigStorage);
+                        }
+                    }
+                }
+                else EquipmentMinistry.buildStructure(creepName);
+            }
         }
         
         // UPGRADERS
         else if (creep.memory.role == "upgrader") {
-            //creep.memory.role = "harvester";
-            EquipmentMinistry.goUpgradeController(creepName);
+            EquipmentMinistry.goUpgradeController(creepName, mainRoomName);
         }
         
         // FIGHTERS
@@ -103,31 +160,27 @@ module.exports.loop = function () {
             let linkOutside  = Game.getObjectById("5bbcad569099fc012e637248");
             let linkInTown   = Game.getObjectById("5e30a77515ad35f28ff3f22a");
             let upRoomName   = "E7S15";
+            let leftRoomName = "E6S16";
             let targetRoom   = Game.rooms["E7S15"];
-            let myRoom       = Game.rooms[myRoomName];
+            let myRoom       = Game.rooms[mainRoomName];
             let forthExit    = Game.map.findExit(creep.room, upRoomName);
-            let backExit     = Game.map.findExit(creep.room, myRoomName);
+            let backExit     = Game.map.findExit(creep.room, mainRoomName);
+            let leftExit     = Game.map.findExit(creep.room, leftRoomName);
             let forthWay     = creep.pos.findClosestByRange(forthExit);
             let backWay      = creep.pos.findClosestByRange(backExit);
-            //creep.move(up);
-            if (creep.room.name == myRoomName) {
-                console.log("DEBUG FIGHTER 1");
-                if (closestEnemy) { creep.attack(closestEnemy); console.log("DEBUG FIGHTER 2");}
-                else creep.moveTo(forthWay); console.log("DEBUG FIGHTER 3->"+creep.moveTo(forthWay));
+            let leftWay      = creep.pos.findClosestByRange(leftExit);
+            if (creep.room.name == mainRoomName) {
+                if (closestEnemy) { creep.attack(closestEnemy) }
+                else creep.moveTo(leftWay);
             }
-            else if (creep.room.name == upRoomName) {
-                //creep.move(RIGHT);
-                let closestEnemy = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
-                let stronghold= Game.getObjectById("5e355dd311a36779f4a610de");
-                if (closestEnemy) { creep.attack(closestEnemy); }
-                //else creep.moveTo(6,25);
-                const target = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
-                if(stronghold) {
-                    if(creep.attack(stronghold) == ERR_NOT_IN_RANGE) {
-                        creep.moveTo(stronghold);
-                    }
+            else if (creep.room.name == leftRoomName) {
+                let closestEnemy = Game.getObjectById("5e3b15fd766f2be1b942c947"); //creep.pos.findClosestByRange(FIND_CREEPS);
+                if (closestEnemy) {
+                    if (creep.attack(closestEnemy) == ERR_NOT_IN_RANGE) {
+                       creep.moveTo(closestEnemy) ;
+                    } 
+                    else creep.moveTo(towers[1]);
                 }
-                
             }
         }
         
@@ -140,8 +193,8 @@ module.exports.loop = function () {
             }
             else {
                 // Refill towers in priority if invader
-                let tower1 = towers[0];
-                let tower2 = towers[1];
+                let creepRoom = creep.room.name;
+                let towers    = creep.room.find(FIND_MY_STRUCTURES, {filter: {structureType: STRUCTURE_TOWER}});
                 for (let i = 0, l = towers.length; i < l; i++) {
                     let emptyTower = towers[i].pos.findClosestByRange(FIND_STRUCTURES, { filter: (s) => s.energy < s.energyCapacity / 2 && (s.structureType==STRUCTURE_TOWER) });
                     if (emptyTower) {
@@ -154,9 +207,13 @@ module.exports.loop = function () {
                         }
                     }
                     // then refill extensions
-                    else EquipmentMinistry.refillExtensions(creepName, roomEnergy, maxRoomEnergy);
+                    else EquipmentMinistry.refillExtensions(creepName, creepRoom, mainRoomEnergy, maxRoomEnergy);
                 }
             }
+        }
+        
+         // CLAIMERS
+        else if (creep.memory.role == "claimer") {
         }
     }
     
@@ -164,5 +221,7 @@ module.exports.loop = function () {
     
     // Towers attack whenever enemy spotted
     DefenceMinistry.towersAttack(towers);
+    
+    
     
 };
